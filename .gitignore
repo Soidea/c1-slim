@@ -6,3 +6,5 @@ artifacts/
 *.wav
 __pycache__/
 .DS_Store
+backup-boot/
+backup-image/

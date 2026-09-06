@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C1ancher Flashing Manual · 刷入手册</title>
+<meta name="description" content="Step-by-step guide to flashing C1ancher onto the C1-Slim from an Apple Silicon Mac. 在 M 系 Mac 上把快易典 C1-Slim 刷成 C1ancher 的分步手册。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+  :root {
+    /* E-ink 面板的实际色偏：略带绿的冷灰白 */
+    --paper:#E7E9E3; --paper-2:#DDE0D8; --paper-3:#D2D6CD;
+    --ink:#15181B; --ink-2:#3D443F; --ink-3:#6B736C;
+    --rule:#B9BEB4; --rule-soft:#C9CDC3;
+    --danger:#A83A22; --danger-bg:#F0DED8;
+    --verified:#2E6659; --verified-bg:#D8E4DE;
+    --term-bg:#16191C; --term-fg:#DCE0D8; --term-dim:#7C857C; --term-accent:#8FB8A6;
+    --f-display:"Archivo",-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    --f-body:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Archivo",sans-serif;
+    --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    /* 8px 节奏 —— 面板 152px 高正好 19 个字节行 */
+    --s1:8px; --s2:16px; --s3:24px; --s4:32px; --s5:48px; --s6:64px;
+    --dither25:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='1' height='1' fill='%2315181B'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%2315181B'/%3E%3C/svg%3E");
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#14171A; --paper-2:#1C2023; --paper-3:#24292C;
+      --ink:#DDE0D9; --ink-2:#AAB2AB; --ink-3:#7C857D;
+      --rule:#333A3C; --rule-soft:#272D2F;
+      --danger:#E88168; --danger-bg:#33201B;
+      --verified:#7FBCA9; --verified-bg:#182A26;
+      --term-bg:#0D0F11;
+      --dither25:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='1' height='1' fill='%23DDE0D9'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23DDE0D9'/%3E%3C/svg%3E");
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#14171A; --paper-2:#1C2023; --paper-3:#24292C;
+    --ink:#DDE0D9; --ink-2:#AAB2AB; --ink-3:#7C857D;
+    --rule:#333A3C; --rule-soft:#272D2F;
+    --danger:#E88168; --danger-bg:#33201B;
+    --verified:#7FBCA9; --verified-bg:#182A26;
+    --term-bg:#0D0F11;
+    --dither25:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='1' height='1' fill='%23DDE0D9'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23DDE0D9'/%3E%3C/svg%3E");
+  }
+
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-body);
+       font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased}
+  img{max-width:100%}
+  .wrap{max-width:812px;margin:0 auto;padding:var(--s4) var(--s3) var(--s6)}
+
+  /* ---- language switching ---- */
+  html[lang="zh"] .en{display:none}
+  html[lang="en"] .zh{display:none}
+  html[lang="zh"] tr.en, html[lang="en"] tr.zh{display:none}
+  html[lang="zh"] li.en, html[lang="en"] li.zh{display:none}
+  html[lang="zh"] p.en, html[lang="en"] p.zh{display:none}
+  html[lang="zh"] div.en, html[lang="en"] div.zh{display:none}
+
+  .langbar{display:flex;justify-content:flex-end;gap:0;margin-bottom:var(--s3)}
+  .langbar button{
+    font-family:var(--f-mono);font-size:11px;font-weight:500;letter-spacing:.12em;
+    background:var(--paper);color:var(--ink-3);border:1px solid var(--rule);
+    padding:5px 12px;cursor:pointer;transition:background .12s,color .12s}
+  .langbar button+button{border-left:none}
+  .langbar button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .langbar button:focus-visible{outline:2px solid var(--verified);outline-offset:2px}
+
+  /* ---- masthead ---- */
+  .mast{border-bottom:2px solid var(--ink);padding-bottom:var(--s3)}
+  .eyebrow{font-family:var(--f-mono);font-size:11px;font-weight:500;letter-spacing:.16em;
+           text-transform:uppercase;color:var(--ink-3);display:flex;flex-wrap:wrap;gap:var(--s2)}
+  h1{font-family:var(--f-display);font-size:clamp(34px,6.4vw,56px);font-weight:700;
+     line-height:1.03;letter-spacing:-.02em;margin:var(--s2) 0 var(--s1);text-wrap:balance}
+  .dek{color:var(--ink-2);font-size:17px;max-width:64ch;margin:0}
+
+  /* ---- spec strip ---- */
+  .spec{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:1px;
+        background:var(--rule-soft);border:1px solid var(--rule-soft);margin:var(--s4) 0 var(--s5)}
+  .spec>div{background:var(--paper);padding:var(--s2)}
+  .spec dt{font-family:var(--f-mono);font-size:10px;font-weight:500;letter-spacing:.14em;
+           text-transform:uppercase;color:var(--ink-3);margin:0 0 4px}
+  .spec dd{margin:0;font-family:var(--f-mono);font-size:13.5px;font-weight:500;
+           font-variant-numeric:tabular-nums;color:var(--ink)}
+
+  /* ---- callouts ---- */
+  .note{border-left:3px solid var(--rule);padding:var(--s1) 0 var(--s1) var(--s2);
+        margin:var(--s3) 0;color:var(--ink-2);font-size:15px}
+  .note strong{color:var(--ink)}
+  .danger{background:var(--danger-bg);border-left:3px solid var(--danger);
+          padding:var(--s2) var(--s3);margin:var(--s3) 0;font-size:15px}
+  .danger .lbl,.good .lbl{display:block;font-family:var(--f-mono);font-size:11px;font-weight:700;
+          letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px}
+  .danger .lbl{color:var(--danger)}
+  .danger p{margin:0;color:var(--ink)}
+  .danger p+p{margin-top:var(--s1)}
+  .good{background:var(--verified-bg);border-left:3px solid var(--verified);
+        padding:var(--s2) var(--s3);margin:var(--s3) 0;font-size:15px}
+  .good .lbl{color:var(--verified)}
+  .good p{margin:0}
+  .good p+p{margin-top:var(--s1)}
+
+  /* ---- steps ---- */
+  .step{display:grid;grid-template-columns:56px 1fr;gap:var(--s3);margin-top:var(--s5)}
+  .num{font-family:var(--f-mono);font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;
+       width:56px;height:56px;display:grid;place-items:center;
+       border:1.5px solid var(--ink);color:var(--ink);background:var(--paper)}
+  .num.fill{background-image:var(--dither25)}
+  .step.crit .num{border-color:var(--danger);color:var(--danger)}
+  .step.opt .num{border-style:dashed;border-color:var(--ink-3);color:var(--ink-3)}
+  .step h2{font-family:var(--f-display);font-size:24px;font-weight:600;letter-spacing:-.01em;
+           line-height:1.25;margin:0 0 var(--s1);text-wrap:balance}
+  .step>div:last-child>:first-child{margin-top:0}
+  .step p{margin:var(--s2) 0;max-width:66ch}
+  .step ul,.step ol{margin:var(--s2) 0;padding-left:20px;max-width:66ch}
+  .step li{margin:6px 0}
+
+  /* ---- terminal ---- */
+  .term{background:var(--term-bg);border:1px solid var(--rule-soft);margin:var(--s2) 0;overflow:hidden}
+  .term-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);
+             padding:6px var(--s2);border-bottom:1px solid #2A2F31;font-family:var(--f-mono);
+             font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--term-dim)}
+  .term pre{margin:0;padding:var(--s2);overflow-x:auto;font-family:var(--f-mono);
+            font-size:13.5px;line-height:1.75;color:var(--term-fg)}
+  .term .c{color:var(--term-dim)}
+  .term .p{color:var(--term-accent)}
+  .copy{font-family:var(--f-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+        background:transparent;color:var(--term-dim);border:1px solid #343A3C;padding:2px 8px;
+        cursor:pointer;transition:color .12s,border-color .12s;white-space:nowrap}
+  .copy:hover{color:var(--term-fg);border-color:#4E5658}
+  .copy:focus-visible{outline:2px solid var(--term-accent);outline-offset:2px}
+  .copy.done{color:var(--term-accent);border-color:var(--term-accent)}
+
+  code.inl{font-family:var(--f-mono);font-size:.88em;background:var(--paper-3);
+           padding:1px 5px;border-radius:2px;word-break:break-word}
+
+  /* ---- tables ---- */
+  .tw{overflow-x:auto;margin:var(--s3) 0}
+  table{border-collapse:collapse;width:100%;font-size:14.5px}
+  th,td{text-align:left;padding:9px var(--s2) 9px 0;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+  th{font-family:var(--f-mono);font-size:10px;font-weight:500;letter-spacing:.14em;
+     text-transform:uppercase;color:var(--ink-3);border-bottom:1px solid var(--rule)}
+  td code{font-family:var(--f-mono);font-size:12.5px}
+  tbody tr:last-child td{border-bottom:none}
+
+  h3{font-family:var(--f-display);font-size:15px;font-weight:600;margin:var(--s4) 0 var(--s1)}
+  .sec-head{font-family:var(--f-mono);font-size:11px;font-weight:500;letter-spacing:.16em;
+            text-transform:uppercase;color:var(--ink-3);border-top:2px solid var(--ink);
+            padding-top:var(--s1);margin:var(--s6) 0 var(--s3)}
+  .foot{margin-top:var(--s6);padding-top:var(--s3);border-top:1px solid var(--rule);
+        font-size:13.5px;color:var(--ink-3)}
+  .foot p{margin:6px 0;max-width:66ch}
+  a{color:var(--ink);text-decoration-color:var(--rule);text-underline-offset:3px}
+  a:hover{text-decoration-color:var(--ink)}
+  strong{font-weight:600}
+
+  @media (max-width:620px){
+    .wrap{padding:var(--s3) var(--s2) var(--s5)}
+    .step{grid-template-columns:44px 1fr;gap:var(--s2)}
+    .num{width:44px;height:44px;font-size:12px}
+    .step h2{font-size:20px}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="langbar">
+    <button type="button" data-lang="zh" aria-pressed="true">中文</button>
+    <button type="button" data-lang="en" aria-pressed="false">EN</button>
+  </div>
+
+  <p style="margin:0 0 var(--s3);font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase">
+    <a href="index.html">&larr; <span class="zh">C1-Slim 硬件手册</span><span class="en">C1-Slim Device Reference</span></a>
+  </p>
+
+  <header class="mast">
+    <div class="eyebrow">
+      <span>快易典 C1-Slim / MP-D261</span>
+      <span>Ingenic X1600</span>
+      <span>Apple Silicon</span>
+    </div>
+    <h1><span class="zh">C1ancher 刷入手册</span><span class="en">C1ancher Flashing Manual</span></h1>
+    <p class="dek zh">把 C1-Slim 从原厂英语学习软件换成 C1ancher —— 一台带 Wi-Fi、SSH 和 root 终端的 MIPS 电子纸小机器。全程 macOS，不需要 Windows、WSL、Docker，也不需要拆机。</p>
+    <p class="dek en">Replace the C1-Slim's stock English-learning software with C1ancher — turning it into a small MIPS e-paper machine with Wi-Fi, SSH and a root terminal. Entirely from macOS: no Windows, no WSL, no Docker, no disassembly.</p>
+  </header>
+
+  <dl class="spec">
+    <div><dt>SoC</dt><dd>X1600</dd></div>
+    <div><dt><span class="zh">架构</span><span class="en">Core</span></dt><dd>XBurst1</dd></div>
+    <div><dt>ISA</dt><dd>MIPS32r2</dd></div>
+    <div><dt><span class="zh">面板</span><span class="en">Panel</span></dt><dd>296 × 152</dd></div>
+    <div><dt><span class="zh">色深</span><span class="en">Depth</span></dt><dd>1 bpp</dd></div>
+    <div><dt><span class="zh">整帧</span><span class="en">Frame</span></dt><dd>5 624 B</dd></div>
+  </dl>
+
+  <div class="good">
+    <span class="lbl"><span class="zh">开始前先明确</span><span class="en">Before you start</span></span>
+    <p class="zh">刷入过程<strong>不碰固件、不写分区、不解 bootloader</strong>。原理是设备「关于设备」页有个隐藏入口，触发后它向厂商接口发一个 <code class="inl">adbAdmit</code> 请求；我们在 Mac 本地把这个请求截下来自己回一个成功响应，设备就重建 USB gadget 打开 ADB。之后所有改动都通过 ADB 的 root shell 完成，根文件系统全程保持只读。</p>
+    <p class="en">Nothing here <strong>touches the firmware, writes a partition, or unlocks a bootloader</strong>. The device's "About device" screen has a hidden entry point; triggering it makes the device send one <code class="inl">adbAdmit</code> request to the vendor API. We intercept exactly that request on the Mac and answer it ourselves, and the device rebuilds its USB gadget with ADB exposed. Everything after that happens over a root ADB shell, with the root filesystem read-only throughout.</p>
+  </div>
+
+  <p class="sec-head"><span class="zh">准备工作 · 一次性</span><span class="en">Setup · once</span></p>
+
+  <div class="step">
+    <div class="num fill">00</div>
+    <div>
+      <h2><span class="zh">装工具，取仓库</span><span class="en">Install tools, get the repo</span></h2>
+      <p class="zh">仓库里 <code class="inl">prebuilt/</code> 放着已经交叉编译并通过 ABI 校验的 MIPS 二进制，你不需要 Docker。</p>
+      <p class="en"><code class="inl">prebuilt/</code> holds MIPS binaries already cross-compiled and ABI-verified, so you don't need Docker.</p>
+      <div class="term">
+        <div class="term-head"><span>Terminal · macOS</span><button class="copy" type="button">Copy</button></div>
+<pre>brew install --cask android-platform-tools
+pip3 install cryptography
+
+git clone https://github.com/theBillLee/c1-slim.git
+cd c1-slim
+chmod +x macos/*.sh
+cp prebuilt/C1ancher prebuilt/C1ancher-launcher build/</pre>
+      </div>
+      <p class="zh">macOS 不需要装任何 ADB 驱动，设备的 <code class="inl">VID_18D1</code> 会直接枚举。准备一根<strong>支持数据传输</strong>的 USB-C 线 —— 充电线是 <code class="inl">adb devices</code> 返回空最常见的原因。</p>
+      <p class="en">macOS needs no ADB driver — the device's <code class="inl">VID_18D1</code> enumerates directly. Have a <strong>data-capable</strong> USB-C cable ready; a charge-only cable is the most common reason <code class="inl">adb devices</code> comes back empty.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">01</div>
+    <div>
+      <h2><span class="zh">开互联网共享</span><span class="en">Turn on Internet Sharing</span></h2>
+      <p class="zh">设备必须连<strong>这台 Mac 发出的热点</strong>，不能连家里路由器 —— 整个方案依赖流量经过 Mac。</p>
+      <p class="en">The device must join a hotspot <strong>this Mac creates</strong>. The method depends on its traffic passing through the Mac, so a device still on your home router will never trigger.</p>
+      <p class="zh"><strong>系统设置 → 通用 → 共享 → 互联网共享</strong>，共享来源选你的上网接口，「用以下端口共享给电脑」勾 <strong>Wi-Fi</strong>，在「Wi-Fi 选项」里设好名称和 WPA2 密码，然后打开开关。</p>
+      <p class="en"><strong>System Settings → General → Sharing → Internet Sharing.</strong> Share from your uplink interface, to <strong>Wi-Fi</strong>. Set a name and WPA2 password under "Wi-Fi Options", then switch it on.</p>
+      <div class="note zh"><strong>M 系 Mac 的坑：</strong>单张网卡同时「连 Wi-Fi 上网」+「发 Wi-Fi 热点」经常起不来或不稳。最稳的组合是<strong>上网走 USB-C 转以太网，共享给 Wi-Fi</strong>。</div>
+      <div class="note en"><strong>Apple Silicon caveat:</strong> one radio doing "join Wi-Fi uplink" <em>and</em> "serve Wi-Fi hotspot" at once is often unstable or refuses to start. The reliable combination is <strong>uplink over USB-C Ethernet, shared to Wi-Fi</strong>.</div>
+      <p class="zh">打开后 Mac 会出现 <code class="inl">bridge100</code>，网关通常是 <code class="inl">192.168.2.1</code>。然后在 C1-Slim 上连接这个热点。</p>
+      <p class="en">The Mac gains a <code class="inl">bridge100</code> interface, usually at <code class="inl">192.168.2.1</code>. Connect the C1-Slim to that hotspot.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">02</div>
+    <div>
+      <h2><span class="zh">自检，顺便找到设备 MAC</span><span class="en">Preflight, and find your device MAC</span></h2>
+      <p class="zh">自检脚本只读，不改任何东西。它逐项检查环境，并<strong>列出热点上的所有客户端</strong> —— 你的设备 MAC 就在这份列表里。脚本里的默认 MAC 是原作者那台机器的，不是你的。</p>
+      <p class="en">The preflight script is read-only. It checks every prerequisite and <strong>lists the clients on your hotspot</strong> — that's how you find your device's MAC. The default MAC in the scripts belongs to the original author's unit, not yours.</p>
+      <div class="term">
+        <div class="term-head"><span>Terminal · macOS</span><button class="copy" type="button">Copy</button></div>
+<pre>./macos/doctor.sh</pre>
+      </div>
+      <p class="zh"><strong>认不出哪个是 C1-Slim？</strong>把设备 Wi-Fi 关掉再跑一次，消失的那行就是它。记下这个 MAC。</p>
+      <p class="en"><strong>Can't tell which client is the C1-Slim?</strong> Turn its Wi-Fi off, run again, and note the row that disappeared.</p>
+    </div>
+  </div>
+
+  <p class="sec-head"><span class="zh">刷入 · 按顺序</span><span class="en">Flashing · in order</span></p>
+
+  <div class="step">
+    <div class="num">03</div>
+    <div>
+      <h2><span class="zh">临时打开 ADB</span><span class="en">Open ADB temporarily</span></h2>
+      <p class="zh">把上一步的 MAC 填进去运行。脚本会在 pf 里加一条只针对「这台设备 → 厂商接口 443」的重定向规则，其余流量不受影响。</p>
+      <p class="en">Run it with the MAC from the previous step. The script loads one pf rule scoped to "this device → the vendor API on 443"; nothing else is touched.</p>
+      <div class="term">
+        <div class="term-head"><span>Terminal · macOS · sudo</span><button class="copy" type="button">Copy</button></div>
+<pre>sudo python3 macos/c1-adb-admit-macos.py \
+    --device-mac 58:C5:87:XX:XX:XX</pre>
+      </div>
+      <p class="zh">等到这三行出现，<strong>看到 <code class="inl">READY</code> 之前不要碰设备</strong>：</p>
+      <p class="en">Wait for all three lines. <strong>Do not touch the device before <code class="inl">READY</code></strong>:</p>
+      <div class="term">
+        <div class="term-head"><span class="zh">预期输出</span><span class="en">Expected output</span></div>
+<pre><span class="p">HTTPS_READY</span>    address=192.168.2.1:8443 ...
+<span class="p">PF_RULE_LOADED</span> anchor=com.apple/c1slim-adb ...
+<span class="p">READY</span> open About-device and press Enter 10 times</pre>
+      </div>
+      <h3><span class="zh">然后在设备上触发隐藏入口</span><span class="en">Then trigger the hidden entry point</span></h3>
+      <ol class="zh">
+        <li>打开设备的<strong>「关于设备」</strong></li>
+        <li>把焦点停在<strong>显示静态版本信息</strong>的那一项上</li>
+        <li>约 5 秒内，快速<strong>按下并完整松开全键盘 Enter 共 10 次</strong></li>
+      </ol>
+      <ol class="en">
+        <li>Open <strong>About device</strong></li>
+        <li>Put the focus on the item showing <strong>static version information</strong></li>
+        <li>Within about 5 seconds, press and <strong>fully release</strong> the keyboard <code class="inl">Enter</code> <strong>10 times</strong></li>
+      </ol>
+      <div class="note zh">固件按<strong>松开</strong>事件计数，所以每次必须完整按下再松开，而且不能太慢。<br>不要执行 <code class="inl">C → S → Enter</code> —— 那个组合进的是 GCTest，和 ADB 无关。</div>
+      <div class="note en">The firmware counts <strong>release</strong> events, so each press must complete, and don't go slowly.<br>Do <strong>not</strong> use <code class="inl">C → S → Enter</code> — that opens GCTest, which is unrelated.</div>
+      <p class="zh">成功后日志会出现 <code class="inl">TLS_OK</code> 和 <code class="inl">APPROVED</code>，设备重建 USB gadget，Mac 上会看到一次 USB 断开重连。插上 USB 验证：</p>
+      <p class="en">On success the log shows <code class="inl">TLS_OK</code> then <code class="inl">APPROVED</code>, the device rebuilds its USB gadget, and macOS registers a USB disconnect/reconnect. Plug in USB and verify:</p>
+      <div class="term">
+        <div class="term-head"><span>Terminal · macOS</span><button class="copy" type="button">Copy</button></div>
+<pre>adb kill-server &amp;&amp; adb start-server
+adb devices -l          <span class="c"># MagicPen-xxxxxx  device</span>
+adb shell id            <span class="c"># uid=0(root) gid=0(root)</span></pre>
+      </div>
+      <div class="note zh">这个 ADB 只在<strong>当前开机周期</strong>有效，重启就没了 —— 第 05 步才让它常驻。</div>
+      <div class="note en">This ADB session lasts only for the <strong>current boot</strong>. Step 05 makes it persistent.</div>
+    </div>
+  </div>
+
+  <div class="step crit">
+    <div class="num">04</div>
+    <div>
+      <h2><span class="zh">整机备份</span><span class="en">Back up the device</span></h2>
+      <div class="danger">
+        <span class="lbl"><span class="zh">别跳过这一步</span><span class="en">Do not skip this</span></span>
+        <p class="zh">新机器手上<strong>没有</strong>原厂系统镜像。这一步导出的东西是你唯一的救砖资本 —— 后面任何一步出问题，恢复都要靠它。</p>
+        <p class="en">A new unit ships with <strong>no system image</strong> in your hands. What this exports is your only way back if anything later goes wrong.</p>
+      </div>
+      <p class="zh">备份脚本全程只读，导出分区表、启动脚本和各分区镜像，并生成校验和。默认只备份 512 MB 以下的分区。</p>
+      <p class="en">The backup script is read-only throughout. It exports the partition table, boot scripts and partition images with a checksum manifest. By default it takes partitions under 512 MB.</p>
+      <div class="term">
+        <div class="term-head"><span>Terminal · macOS</span><button class="copy" type="button">Copy</button></div>
+<pre>./macos/backup.sh
+
+<span class="c"># every partition, no size limit:</span>
+<span class="c">./macos/backup.sh --all</span></pre>
+      </div>
+      <p class="zh">结果写到 <code class="inl">~/C1Slim-Backup/&lt;时间戳&gt;/</code>。<strong>把这个目录复制到另一块盘再继续。</strong></p>
+      <p class="en">Results land in <code class="inl">~/C1Slim-Backup/&lt;timestamp&gt;/</code>. <strong>Copy that directory to another disk before continuing.</strong></p>
+      <div class="term">
+        <div class="term-head"><span>Terminal · macOS</span><button class="copy" type="button">Copy</button></div>
+<pre>cd ~/C1Slim-Backup/&lt;timestamp&gt; &amp;&amp; shasum -a 256 -c SHA256SUMS</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">05</div>
+    <div>
+      <h2><span class="zh">让 ADB 开机常驻</span><span class="en">Make ADB survive reboot</span></h2>
+      <p class="zh">原厂 <code class="inl">/etc/init.d/S90usb</code> 里本来就有一行 ADB FunctionFS 启动项，只是被注释掉了。这一步把它取消注释。</p>
+      <p class="en">The stock <code class="inl">/etc/init.d/S90usb</code> already contains an ADB FunctionFS startup line — it is merely commented out. This uncomments it.</p>
+      <div class="term">
+        <div class="term-head"><span>Terminal · macOS</span><button class="copy" type="button">Copy</button></div>
+<pre>./macos/install-open-adb.sh install --reboot</pre>
+      </div>
+      <p class="zh">脚本从设备 <code class="inl">adb pull</code> 出原始文件，比对已知哈希 <code class="inl">c2b278b2…</code> 后才做那一行修改，写入前后都做校验，失败自动回滚并把根分区重挂为只读。原文件保留在设备的三个位置。</p>
+      <p class="en">The stock file is pulled from the device and checked against the known hash <code class="inl">c2b278b2…</code> before the single-line edit is applied. The installer verifies before and after writing, and on failure restores the original and remounts <code class="inl">/</code> read-only. Copies are kept in three locations on the device.</p>
+      <div class="danger">
+        <span class="lbl"><span class="zh">安全边界</span><span class="en">Security boundary</span></span>
+        <p class="zh">装完之后<strong>任何电脑插上 USB 都直接是 root shell</strong>，没有 adb_keys 授权。这是上游项目明确选择的开放开发模式，不是疏漏。介意的话到此为止，别做下一步。</p>
+        <p class="en">After this, <strong>any computer that plugs in gets a root shell</strong> — no adb_keys, no authorization prompt. That is a deliberate choice by the upstream project, not an oversight. If it bothers you, stop here.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="num">06</div>
+    <div>
+      <h2><span class="zh">安装 C1ancher</span><span class="en">Install C1ancher</span></h2>
+      <p class="zh">部署主程序、<code class="inl">app_daemon</code> supervisor、Neofetch，并为这台设备生成独有的 Ed25519 SSH host key。</p>
+      <p class="en">Deploys the application, the <code class="inl">app_daemon</code> supervisor, Neofetch, and generates a unique Ed25519 SSH host key for the device.</p>
+      <div class="term">
+        <div class="term-head"><span>Terminal · macOS</span><button class="copy" type="button">Copy</button></div>
+<pre>./macos/install-default-app.sh install --reboot</pre>
+      </div>
+      <p class="zh">设备端脚本逐文件校验 SHA-256，失败自动回滚。<code class="inl">--reboot</code> 会重启并验证冷启动后确实是 C1ancher 起来，而且 <code class="inl">app_daemon</code> 和 C1ancher 各只有一个实例。</p>
+      <p class="en">The device-side script verifies every file by SHA-256 and rolls back on failure. <code class="inl">--reboot</code> confirms that C1ancher is what comes up from cold, with exactly one instance each of it and <code class="inl">app_daemon</code>.</p>
+      <div class="good">
+        <span class="lbl"><span class="zh">到这里就完成了</span><span class="en">That's it</span></span>
+        <p class="zh">设备现在是 C1ancher 的 3×3 九宫格首页：上 <strong>WI-FI</strong>、左 <strong>SSH</strong>、右 <strong>TERMINAL</strong>、下 <strong>DEVICE</strong>（自动跑 neofetch），四角显示 Wi-Fi 状态、SSH 状态、电量和时间。原厂软件仍在磁盘上，没有被删。</p>
+        <p class="en">You now have the C1ancher 3×3 home screen: <strong>WI-FI</strong> up, <strong>SSH</strong> left, <strong>TERMINAL</strong> right, <strong>DEVICE</strong> down (runs neofetch). Corners show Wi-Fi state, SSH state, battery and time. The stock software is still on disk.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="step opt">
+    <div class="num">07</div>
+    <div>
+      <h2><span class="zh">删除原厂软件 · 可选</span><span class="en">Remove the stock software · optional</span></h2>
+      <div class="danger">
+        <span class="lbl"><span class="zh">不可逆</span><span class="en">Irreversible</span></span>
+        <p class="zh">这一步删掉 <code class="inl">/usr/bin/d261</code>。设备端<strong>没有恢复路径</strong>，只能靠第 04 步备份出来的镜像。</p>
+        <p class="en">This deletes <code class="inl">/usr/bin/d261</code>. There is <strong>no on-device recovery path</strong> — only the images from step 04.</p>
+        <p class="zh">确认备份完好、<code class="inl">shasum -c</code> 全部通过、而且已经复制到另一块盘之后，再考虑跑它。不做这步完全不影响使用。</p>
+        <p class="en">Only consider it once your backup passes <code class="inl">shasum -c</code> and lives on a second disk. Skipping it costs you nothing functionally.</p>
+      </div>
+      <div class="term">
+        <div class="term-head"><span>Terminal · macOS</span><button class="copy" type="button">Copy</button></div>
+<pre>./macos/install-default-app.sh remove-original --reboot</pre>
+      </div>
+    </div>
+  </div>
+
+  <p class="sec-head"><span class="zh">排错</span><span class="en">Troubleshooting</span></p>
+
+  <div class="tw">
+    <table>
+      <thead>
+        <tr class="zh"><th style="width:38%">现象</th><th>处理</th></tr>
+        <tr class="en"><th style="width:38%">Symptom</th><th>Fix</th></tr>
+      </thead>
+      <tbody>
+        <tr class="zh"><td><code>no active Internet Sharing bridge found</code></td><td>共享没开，或 <code>bridge100</code> 没拿到 <code>inet</code>。<code>ifconfig bridge100</code> 确认；必要时用 <code>--bridge</code> / <code>--gateway-ip</code> 手动指定。</td></tr>
+        <tr class="en"><td><code>no active Internet Sharing bridge found</code></td><td>Sharing is off, or <code>bridge100</code> has no <code>inet</code>. Check <code>ifconfig bridge100</code>; pass <code>--bridge</code> / <code>--gateway-ip</code>.</td></tr>
+        <tr class="zh"><td><code>MAC ... was not found</code></td><td>设备没连 Mac 热点（可能还连着路由器）。报错会列出实际看到的客户端，照着传 <code>--device-ip</code>。DHCP 地址会变，别硬编码。</td></tr>
+        <tr class="en"><td><code>MAC ... was not found</code></td><td>The device isn't on the Mac hotspot. The error lists the clients it did see — pass <code>--device-ip</code>. DHCP addresses change; don't hard-code.</td></tr>
+        <tr class="zh"><td>出了 <code>READY</code> 但没有 <code>TCP_ACCEPT</code></td><td>确认设备连的是 Mac 热点；确认触发的是「关于设备」里的静态版本信息项；10 次 Enter 要在 5 秒内完成且每次完整松开。</td></tr>
+        <tr class="en"><td><code>READY</code> but no <code>TCP_ACCEPT</code></td><td>Confirm the device is on the Mac hotspot; confirm you're on the static version-info row; the 10 presses must finish within ~5 s with full releases.</td></tr>
+        <tr class="zh"><td>出现 <code>APPROVED</code> 但设备仍拒绝</td><td>响应体必须精确保持字符串型错误码 <code>{"errorCode":"200",…}</code>，数字 <code>200</code> 或 <code>0</code> 都不会被固件接受。别改这个响应。</td></tr>
+        <tr class="en"><td><code>APPROVED</code> but the device still refuses</td><td>The body must keep the <em>string</em> error code <code>{"errorCode":"200",…}</code>. Numeric <code>200</code> or <code>0</code> will not be accepted. Don't edit it.</td></tr>
+        <tr class="zh"><td><code>adb devices</code> 为空</td><td>换一根<strong>支持数据传输</strong>的 USB-C 线（充电线不行），换端口，然后 <code>adb kill-server &amp;&amp; adb start-server</code>。</td></tr>
+        <tr class="en"><td><code>adb devices</code> empty</td><td>Use a <strong>data-capable</strong> USB-C cable (not charge-only), try another port, then <code>adb kill-server &amp;&amp; adb start-server</code>.</td></tr>
+        <tr class="zh"><td><code>Open root ADB startup hash changed</code></td><td>第 06 步要求第 05 步先做完。先跑 <code>install-open-adb.sh install --reboot</code>。</td></tr>
+        <tr class="en"><td><code>Open root ADB startup hash changed</code></td><td>Step 06 requires step 05. Run <code>install-open-adb.sh install --reboot</code> first.</td></tr>
+        <tr class="zh"><td>pf 规则没生效</td><td><code>sudo pfctl -s info | head -1</code> 应为 Enabled；<code>/etc/pf.conf</code> 需含 <code>rdr-anchor "com.apple/*"</code>（macOS 默认自带）。</td></tr>
+        <tr class="en"><td>pf rule not taking effect</td><td><code>sudo pfctl -s info | head -1</code> should read Enabled; <code>/etc/pf.conf</code> needs <code>rdr-anchor "com.apple/*"</code> (macOS ships with it).</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="sec-head"><span class="zh">回滚</span><span class="en">Rollback</span></p>
+
+  <div class="tw">
+    <table>
+      <thead>
+        <tr class="zh"><th style="width:38%">目标</th><th>命令</th></tr>
+        <tr class="en"><th style="width:38%">Goal</th><th>Command</th></tr>
+      </thead>
+      <tbody>
+        <tr class="zh"><td>关闭常驻 ADB</td><td><code>./macos/install-open-adb.sh uninstall --reboot</code></td></tr>
+        <tr class="en"><td>Disable persistent ADB</td><td><code>./macos/install-open-adb.sh uninstall --reboot</code></td></tr>
+        <tr class="zh"><td>清理残留 pf 规则</td><td><code>sudo pfctl -a com.apple/c1slim-adb -F all</code></td></tr>
+        <tr class="en"><td>Clear leftover pf rules</td><td><code>sudo pfctl -a com.apple/c1slim-adb -F all</code></td></tr>
+        <tr class="zh"><td>恢复原厂启动器</td><td>需要第 04 步备份出来的镜像</td></tr>
+        <tr class="en"><td>Restore stock launcher</td><td>Requires the images from step 04</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="foot">
+    <p class="zh"><strong>日志隐私：</strong><code class="inl">macos/adb-admit-plaintext.log</code> 记录 TLS 解密后的完整 HTTP 请求，可能包含 Cookie、手机号、sessionId、penId 和设备序列号。排错求助前先删掉这些字段，用完删掉日志。</p>
+    <p class="en"><strong>Log privacy:</strong> <code class="inl">macos/adb-admit-plaintext.log</code> records the full decrypted HTTP request and can contain cookies, a phone number, sessionId, penId and the device serial. Strip those before sharing it, and delete the log when you're done.</p>
+    <p class="zh"><strong>二进制校验：</strong>C1ancher <code class="inl">a031ccea…</code> · launcher <code class="inl">d8ee229b…</code>，均为 ELF32 / 小端 / o32 / mips32r2 / hard-float double / 完全静态。复现编译跑 <code class="inl">macos/build.sh</code>。</p>
+    <p class="en"><strong>Binary checksums:</strong> C1ancher <code class="inl">a031ccea…</code> · launcher <code class="inl">d8ee229b…</code>, both ELF32 / little-endian / o32 / mips32r2 / hard-float double / fully static. Reproduce with <code class="inl">macos/build.sh</code>.</p>
+    <p class="zh">上游项目：<a href="https://github.com/fwz233-RE/C1ancher">fwz233-RE/C1ancher</a>（GPL-3.0）。仅限本人拥有的设备。取得 root shell 后优先做只读备份，在没有可靠救砖入口之前，不要 remount 可写、写 eMMC 或修改启动脚本。</p>
+    <p class="en">Upstream: <a href="https://github.com/fwz233-RE/C1ancher">fwz233-RE/C1ancher</a> (GPL-3.0). Use only on hardware you own. Once you have a root shell, prioritise read-only backup — don't remount writable, write eMMC or edit boot scripts before you have a proven unbrick path.</p>
+  </div>
+
+</div>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var buttons = document.querySelectorAll(".langbar button");
+
+    function apply(lang) {
+      root.setAttribute("lang", lang);
+      buttons.forEach(function (b) {
+        b.setAttribute("aria-pressed", String(b.dataset.lang === lang));
+      });
+      try { localStorage.setItem("c1-lang", lang); } catch (e) {}
+    }
+
+    var saved = null;
+    try { saved = localStorage.getItem("c1-lang"); } catch (e) {}
+    if (saved !== "en" && saved !== "zh") {
+      saved = (navigator.language || "").toLowerCase().indexOf("zh") === 0 ? "zh" : "en";
+    }
+    apply(saved);
+
+    buttons.forEach(function (b) {
+      b.addEventListener("click", function () { apply(b.dataset.lang); });
+    });
+
+    document.querySelectorAll(".term").forEach(function (term) {
+      var button = term.querySelector(".copy");
+      var pre = term.querySelector("pre");
+      if (!button || !pre) return;
+      button.addEventListener("click", function () {
+        var text = pre.innerText.split("\n").filter(function (line) {
+          return line.trim() && line.trim()[0] !== "#";
+        }).join("\n");
+        navigator.clipboard.writeText(text).then(function () {
+          button.textContent = "OK";
+          button.classList.add("done");
+          setTimeout(function () {
+            button.textContent = "Copy";
+            button.classList.remove("done");
+          }, 1600);
+        }).catch(function () {
+          button.textContent = "ERR";
+          setTimeout(function () { button.textContent = "Copy"; }, 1600);
+        });
+      });
+    });
+  })();
+</script>
+</body>
+</html>
