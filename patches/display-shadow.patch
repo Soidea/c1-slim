@@ -1,0 +1,57 @@
+--- /tmp/display.c.orig	2026-09-06 10:58:28.386780490 +0000
++++ src/hal/linux/display.c	2026-09-06 10:58:28.411790596 +0000
+@@ -6,11 +6,43 @@
+ #include <fcntl.h>
+ #include <stdbool.h>
+ #include <stddef.h>
++#include <stdio.h>
++#include <sys/stat.h>
+ #include <unistd.h>
+ 
+ #define C1_EPAPER_DEVICE "/dev/epaper_lcd"
+ #define C1_EPAPER_REFRESH "/sys/devices/platform/e0266a128/epaper/refresh"
+ 
++/* 影子帧。面板驱动的字符设备是只写的（read() 未实现，且没有 /dev/fb*），
++ * 所以屏幕内容无法回读。这里在每次成功写屏后把同一份数据另存到 tmpfs，
++ * 主机端 adb pull 即可得到与屏幕一致的截图。
++ *
++ * 落在 /dev/shm（tmpfs）而不是 /usr/data：每帧都写 flash 会磨损 eMMC。
++ * 先写临时文件再 rename —— tmpfs 上 rename 是原子的，读取方永远看到完整帧。
++ * 任何失败都静默忽略：截图功能绝不能影响显示本身。 */
++#define C1_SHADOW_PATH "/dev/shm/c1-screen.bin"
++#define C1_SHADOW_TEMP "/dev/shm/.c1-screen.tmp"
++
++static void tee_shadow_frame(const uint8_t *frame, uint32_t size)
++{
++    int descriptor = open(C1_SHADOW_TEMP,
++                          O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC,
++                          S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
++    ssize_t written;
++
++    if (descriptor < 0) {
++        return;
++    }
++    written = write(descriptor, frame, size);
++    if (close(descriptor) != 0 || written != (ssize_t)size) {
++        (void)unlink(C1_SHADOW_TEMP);
++        return;
++    }
++    if (rename(C1_SHADOW_TEMP, C1_SHADOW_PATH) != 0) {
++        (void)unlink(C1_SHADOW_TEMP);
++    }
++}
++
+ static bool write_refresh(int *error_number)
+ {
+     static const char value[] = "1";
+@@ -88,6 +120,10 @@
+         }
+     }
+ 
++    if (frame_written) {
++        tee_shadow_frame(frame, size);
++    }
++
+     if (frame_written && request_refresh) {
+         refresh_requested = write_refresh(&refresh_error);
+     }

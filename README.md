@@ -5,9 +5,17 @@ Kuaiyidian (快易典) C1-Slim / MP-D261 e-paper device.**
 
 No Windows, no WSL, no Docker, no disassembly. Tested on Apple Silicon.
 
-### 📖 Guide · 指南
+### 📖 Flashing guide · 刷机指南
 
 **[English](MACOS.md)**  ·  **[简体中文](MACOS.zh-CN.md)**  ·  [Web version](https://theBillLee.github.io/C1ancher-mac/)
+
+### 🔬 Hardware notes · 硬件笔记
+
+**[English](HARDWARE.md)**  ·  **[简体中文](HARDWARE.zh-CN.md)**
+
+Framebuffer layout, the single-`write()` requirement, screenshot support, audio and
+keyboard — all verified on real hardware. Read this before writing anything that drives
+the panel directly.
 
 ---
 
@@ -37,6 +45,8 @@ sudo python3 macos/c1-adb-admit-macos.py --device-mac <MAC>   # open ADB (tempor
 | `macos/` | The macOS host scripts — everything you run |
 | `prebuilt/` | MIPS binaries, already cross-compiled and ABI-verified |
 | `docs/` | Bilingual web guide (GitHub Pages) |
+| `tools/` | Host-side tooling: frame packing, pixel-font rendering, screenshots |
+| `patches/` | `display-shadow.patch` — adds screenshot support to C1ancher |
 | `src/`, `scripts/`, `third_party/` | Upstream C1ancher sources, unmodified |
 
 Copy `prebuilt/C1ancher` and `prebuilt/C1ancher-launcher` into `build/` to skip

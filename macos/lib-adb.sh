@@ -95,7 +95,8 @@ assert_application_state() {
 }
 
 wait_for_reconnect() {
-    local timeout="$1" deadline=$((SECONDS + timeout))
+    local timeout="$1"
+    local deadline=$((SECONDS + timeout))
     note "Waiting up to ${timeout}s for the device to come back..."
     while (( SECONDS < deadline )); do
         sleep 2
